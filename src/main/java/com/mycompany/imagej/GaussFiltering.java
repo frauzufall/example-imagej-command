@@ -14,6 +14,7 @@ import net.imagej.ops.OpService;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.type.numeric.RealType;
+import org.scijava.ItemIO;
 import org.scijava.command.Command;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -35,12 +36,9 @@ import java.util.List;
  */
 @Plugin(type = Command.class, menuPath = "Plugins>Gauss Filtering")
 public class GaussFiltering<T extends RealType<T>> implements Command {
-    //
-    // Feel free to add more parameters here...
-    //
 
     @Parameter
-    private Dataset currentData;
+    private Img input;
 
     @Parameter
     private UIService uiService;
@@ -48,26 +46,16 @@ public class GaussFiltering<T extends RealType<T>> implements Command {
     @Parameter
     private OpService opService;
 
+    @Parameter(type = ItemIO.OUTPUT)
+    private RandomAccessibleInterval output;
+
     @Override
     public void run() {
-        final Img<T> image = (Img<T>)currentData.getImgPlus();
 
-        //
-        // Enter image processing code here ...
-        // The following is just a Gauss filtering example
-        //
-        final double[] sigmas = {1.0, 3.0, 5.0};
+        double sigma = 3.0;
 
-        List<RandomAccessibleInterval<T>> results = new ArrayList<>();
-
-        for (double sigma : sigmas) {
-            results.add(opService.filter().gauss(image, sigma));
-        }
-
-        // display result
-        for (RandomAccessibleInterval<T> elem : results) {
-            uiService.show(elem);
-        }
+        output = opService.filter().gauss(input, sigma);
+        uiService.show(output);
     }
 
     /**
@@ -88,10 +76,10 @@ public class GaussFiltering<T extends RealType<T>> implements Command {
 
         if (file != null) {
             // load the dataset
-            final Dataset dataset = ij.scifio().datasetIO().open(file.getPath());
+            Object img = ij.io().open(file.getAbsolutePath());
 
             // show the image
-            ij.ui().show(dataset);
+            ij.ui().show(img);
 
             // invoke the plugin
             ij.command().run(GaussFiltering.class, true);
